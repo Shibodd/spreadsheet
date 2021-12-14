@@ -3,30 +3,26 @@ package expressions;
 import java.util.function.BiFunction;
 
 public class BinaryExpressionTreeNode extends ExpressionTreeNode {
-	Class<?> childrenClass;
-	BiFunction<Object, Object, Object> function;
+	BiFunction<Double, Double, Double> function;
 	
-	public BinaryExpressionTreeNode(Class<?> resultClass, Class<?> childrenClass, BiFunction<Object, Object, Object> function) {
-		super(Double.class);
-		
-		this.childrenClass = childrenClass;
+	public BinaryExpressionTreeNode(BiFunction<Double, Double, Double> function) {
+		super();
 		this.function = function;
 	}
 
 	@Override
 	public void addChild(ExpressionTreeNode node) 
-			throws ExpressionTreeTypeException, InvalidExpressionTreeException {
+			throws InvalidExpressionTreeException {
 		
 		if (children.size() >= 2)
 			throw new InvalidExpressionTreeException("Binary nodes expect only two children.");
 		
-		node.typeCheck(childrenClass);
 		super.addChild(node);
 	}
 
 	@Override
-	public Object evaluate() 
-			throws ExpressionTreeTypeException, InvalidExpressionTreeException {
+	public double evaluate() 
+			throws InvalidExpressionTreeException {
 		
 		if (children.size() <= 0)
 			throw new InvalidExpressionTreeException("This binary node has no children.");

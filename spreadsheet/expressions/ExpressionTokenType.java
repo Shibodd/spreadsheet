@@ -1,13 +1,13 @@
 package spreadsheet.expressions;
 
 public enum ExpressionTokenType {
-	Number(0, "\\d+(\\.\\d+)?([eE][+\\-]\\d+)?|0x[0-9A-Fa-f]+"),
-	Operator(1, "[+\\-/*]"),
-	Identifier(2, "[A-Za-z_][A-Za-z_0-9]+"),
-	OpeningParen(3, "\\("),
-	ClosingParen(4, "\\)"),
-	Comma(5, ","),
-	RangeColon(6, ":");
+			NUMBER(0, "\\d+(\\.\\d+)?([eE][+\\-]?\\d+)?|0x[0-9A-Fa-f]+"),
+	  EXPRESSION_OPERATOR(1, "[+\\-]"),
+	  FACTOR_OPERATOR(2, "[*/]"),
+		IDENTIFIER(3, "[A-Za-z_][A-Za-z_0-9]+"),
+	  OPENING_PARENS(4, "\\("),
+	  CLOSING_PARENS(5, "\\)"),
+			 COMMA(6, ",");
 	
 	public final int id;
 	public final String pattern;

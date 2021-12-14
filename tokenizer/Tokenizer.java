@@ -1,8 +1,7 @@
 package tokenizer;
 
-import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Queue;
+import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,7 +13,7 @@ public class Tokenizer  {
 	String expression;
 	int char_i;
 	
-	Queue<Token> tokenQueue;
+	Stack<Token> tokenQueue;
 	
 	public Tokenizer(String[] language) {
 		this.language = 
@@ -25,7 +24,7 @@ public class Tokenizer  {
 	
 	public void reset(String expression) {
 		this.expression = expression;
-		this.tokenQueue = new ArrayDeque<Token>(4);
+		this.tokenQueue = new Stack<Token>();
 		this.matchers = Arrays.stream(language)
 					.map(x -> x.matcher(expression))
 					.toArray(count -> new Matcher[count]);
@@ -34,26 +33,27 @@ public class Tokenizer  {
 	}
 	
 	
-	public boolean eof() {
-		return char_i == expression.length();
+	public boolean exhausted() {
+		return tokenQueue.size() <= 0 && eof();
+	}
+	
+	private boolean eof() {
+		consumeWhitespace();
+		return char_i >= expression.length();
 	}
 	
 	public void pushBack(Token token) {
-		tokenQueue.add(token);
+		tokenQueue.push(token);
 	}
 	
 	public Token nextToken() throws TokenizeException {
 		if (tokenQueue.size() > 0)
-			return tokenQueue.remove();
+			return tokenQueue.pop();
 		else
 			return readToken();
 	}
 	
 	private Token readToken() throws TokenizeException {
-		// Consume whitespace between tokens
-		while (!eof() && Character.isWhitespace(expression.charAt(char_i)))
-			++char_i;
-		
 		if (eof())
 			return null;
 		
@@ -68,5 +68,10 @@ public class Tokenizer  {
 		}
 		
 		throw new TokenizeException(String.format("Unexpected character %c in position %d in string %s.", expression.charAt(char_i), char_i, expression));
+	}
+	
+	private void consumeWhitespace() {
+		while (char_i < expression.length() && Character.isWhitespace(expression.charAt(char_i)))
+			++char_i;
 	}
 }

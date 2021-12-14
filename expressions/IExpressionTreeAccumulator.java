@@ -1,5 +1,5 @@
 package expressions;
 
 public interface IExpressionTreeAccumulator {
-	public Object accumulate(Object accumulator, ExpressionTreeNode node) throws ExpressionTreeTypeException, InvalidExpressionTreeException;
+	public double accumulate(double accumulator, double value) throws InvalidExpressionTreeException;
 }

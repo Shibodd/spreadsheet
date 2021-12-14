@@ -1,20 +1,20 @@
 package expressions;
 
 public class ConstantExpressionTreeNode extends ExpressionTreeNode {
-	Object value;
+	double value;
 	
-	public ConstantExpressionTreeNode(Object value) {
-		super(value.getClass());
+	public ConstantExpressionTreeNode(double value) {
+		super();
 		this.value = value;
 	}
 
 	@Override
-	public void addChild(ExpressionTreeNode node) throws ExpressionTreeTypeException, InvalidExpressionTreeException { 
+	public void addChild(ExpressionTreeNode node) throws InvalidExpressionTreeException { 
 		throw new InvalidExpressionTreeException("Constants expect no children.");
 	}
 	
 	@Override
-	public Object evaluate() throws ExpressionTreeTypeException, InvalidExpressionTreeException {
+	public double evaluate() throws InvalidExpressionTreeException {
 		return value;
 	}
 }

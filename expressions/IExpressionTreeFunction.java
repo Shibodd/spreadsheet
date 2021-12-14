@@ -1,7 +1,5 @@
 package expressions;
 
-import java.util.List;
-
 public interface IExpressionTreeFunction {
-	public Object apply(List<ExpressionTreeNode> parameters) throws ExpressionTreeTypeException, InvalidExpressionTreeException;
+	public double apply(double[] parameters) throws InvalidExpressionTreeException;
 }

@@ -5,7 +5,7 @@ import spreadsheet.Geometry.Rect;
 public abstract class Cell implements IDependencyChangedListener {
 	public Rect rect;
 	public String expression;
-	
+
 	public DependencyGraphNode dependencyGraphNode;
 	
 	public Cell(Rect rect, String expression) {

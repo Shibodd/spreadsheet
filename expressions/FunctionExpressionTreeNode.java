@@ -1,42 +1,41 @@
 package expressions;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Function;
-
 public class FunctionExpressionTreeNode extends ExpressionTreeNode {
-	Class<?>[] parametersClasses;
 	IExpressionTreeFunction function;
+	int parameterCount;
 	
-	public FunctionExpressionTreeNode(Class<?> resultClass, Class<?>[] parametersClasses, IExpressionTreeFunction function) {
-		super(resultClass);
+	public FunctionExpressionTreeNode(int parameterCount, IExpressionTreeFunction function) {
+		super();
 		
-		this.parametersClasses = parametersClasses;
+		this.parameterCount = parameterCount;
 		this.function = function;
 	}
 
 	@Override
 	public void addChild(ExpressionTreeNode node) 
-			throws ExpressionTreeTypeException, InvalidExpressionTreeException {
+			throws InvalidExpressionTreeException {
 		
-		if (children.size() >= parametersClasses.length)
+		if (children.size() >= parameterCount)
 			throw new InvalidExpressionTreeException(
-					String.format("Too many parameters provided - this function only expects %d.", parametersClasses.length)
+					String.format("Too many parameters provided - this function only expects %d.", parameterCount)
 			);
 		
-		node.typeCheck(parametersClasses[children.size()]);
 		super.addChild(node);
 	}
 
 	@Override
-	public Object evaluate() 
-			throws ExpressionTreeTypeException, InvalidExpressionTreeException {
+	public double evaluate() 
+			throws InvalidExpressionTreeException {
 		
-		if (children.size() != parametersClasses.length)
+		if (children.size() != parameterCount)
 			throw new InvalidExpressionTreeException(
-					String.format("This function node expects %d children, but %d were provided.", parametersClasses.length, children.size())
+					String.format("This function node expects %d children, but %d were provided.", parameterCount, children.size())
 			);
+
+		double[] parameters = new double[parameterCount];
+		for (int i = 0; i < parameterCount; ++i)
+			parameters[i] = children.get(i).evaluate();
 		
-		return function.apply(Collections.unmodifiableList(children));
+		return function.apply(parameters);
 	}
 }
