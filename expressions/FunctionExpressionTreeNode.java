@@ -1,13 +1,15 @@
 package expressions;
 
+import java.util.function.Function;
+
 public class FunctionExpressionTreeNode extends ExpressionTreeNode {
-	IExpressionTreeFunction function;
-	int parameterCount;
+	Function<Object[], Object> function;
+	Class<?>[] parameterClasses;
 	
-	public FunctionExpressionTreeNode(int parameterCount, IExpressionTreeFunction function) {
-		super();
+	public FunctionExpressionTreeNode(Class<?> resultType, Class<?>[] parameterClasses, Function<Object[], Object> function) {
+		super(resultType);
 		
-		this.parameterCount = parameterCount;
+		this.parameterClasses =	parameterClasses;
 		this.function = function;
 	}
 
@@ -15,27 +17,33 @@ public class FunctionExpressionTreeNode extends ExpressionTreeNode {
 	public void addChild(ExpressionTreeNode node) 
 			throws InvalidExpressionTreeException {
 		
-		if (children.size() >= parameterCount)
+		if (children.size() >= parameterClasses.length)
 			throw new InvalidExpressionTreeException(
-					String.format("Too many parameters provided - this function only expects %d.", parameterCount)
+					String.format("Too many parameters provided - this function only expects %d.", parameterClasses.length)
+			);
+		
+		if (!node.resultClass.equals(parameterClasses[children.size()]))
+			throw new InvalidExpressionTreeException(
+					String.format("The class %s of the %d parameter differs from the declared class %s.", 
+							node.resultClass.getName(), children.size(), parameterClasses[children.size()])
 			);
 		
 		super.addChild(node);
 	}
 
 	@Override
-	public double evaluate() 
+	public Object evaluate() 
 			throws InvalidExpressionTreeException {
 		
-		if (children.size() != parameterCount)
+		if (children.size() != parameterClasses.length)
 			throw new InvalidExpressionTreeException(
-					String.format("This function node expects %d children, but %d were provided.", parameterCount, children.size())
+					String.format("This function node expects %d children, but %d were provided.", parameterClasses.length, children.size())
 			);
 
-		double[] parameters = new double[parameterCount];
-		for (int i = 0; i < parameterCount; ++i)
+		Object[] parameters = new Object[parameterClasses.length];
+		for (int i = 0; i < parameterClasses.length; ++i)
 			parameters[i] = children.get(i).evaluate();
 		
-		return function.apply(parameters);
+		return resultTypeCheck(function.apply(parameters));
 	}
 }

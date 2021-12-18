@@ -32,6 +32,26 @@ public class GraphNode {
 		child.parents.remove(this);
 	}
 	
+	public void addParent(GraphNode parent) {
+		parents.add(parent);
+		parent.children.add(this);
+	}
+	public void removeParent(GraphNode parent) {
+		parents.remove(parent);
+		parent.children.remove(this);
+	}
+	
+	public void removeAllParents() {
+		while (parents.size() > 0)
+			parents.remove(0).children.remove(this);
+	}
+	
+	public void removeAllChildren() {
+		while (children.size() > 0)
+			children.remove(0).parents.remove(this);
+	}
+	
+	
 	public Stack<GraphNode> topologicalSort(Predicate<GraphNode> filter) throws GraphCycleException {
 		HashMap<Integer, DFSInfo> nodesInfo = new HashMap<Integer, DFSInfo>();
 		

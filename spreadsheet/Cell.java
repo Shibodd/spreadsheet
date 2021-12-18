@@ -3,13 +3,18 @@ package spreadsheet;
 import spreadsheet.Geometry.Rect;
 
 public abstract class Cell implements IDependencyChangedListener {
-	public Rect rect;
-	public String expression;
+	Rect rect;
+	String expression;
 
-	public DependencyGraphNode dependencyGraphNode;
+	DependencyGraphNode dependencyGraphNode;
 	
 	public Cell(Rect rect, String expression) {
+		
 		this.rect = rect;
+		this.expression = expression;
+	}
+	
+	public void updateExpression(String expression) {
 		this.expression = expression;
 	}
 

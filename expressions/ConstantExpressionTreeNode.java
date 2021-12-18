@@ -1,10 +1,10 @@
 package expressions;
 
 public class ConstantExpressionTreeNode extends ExpressionTreeNode {
-	double value;
+	Object value;
 	
-	public ConstantExpressionTreeNode(double value) {
-		super();
+	public ConstantExpressionTreeNode(Object value) {
+		super(value.getClass());
 		this.value = value;
 	}
 
@@ -14,7 +14,7 @@ public class ConstantExpressionTreeNode extends ExpressionTreeNode {
 	}
 	
 	@Override
-	public double evaluate() throws InvalidExpressionTreeException {
+	public Object evaluate() throws InvalidExpressionTreeException {
 		return value;
 	}
 }
