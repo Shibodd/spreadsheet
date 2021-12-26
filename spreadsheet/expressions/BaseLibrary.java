@@ -20,6 +20,11 @@ public class BaseLibrary {
 		return new FirstChildAccumulatorExpressionTreeNode(Double.class, Double.class, (acc, x) -> (double)acc / (double)x);
 	}
 	
+	public static ExpressionTreeNode numericNegation() {
+		return new FunctionExpressionTreeNode(Double.class, new Class<?>[] { Double.class }, 
+				parameters -> -(double)parameters[0]);
+	}
+	
 	public static FunctionExpressionTreeNode logBase() {
 		return new FunctionExpressionTreeNode(Double.class, new Class<?>[] { Double.class, Double.class }, parameters -> {
 			double num = (double)parameters[0];
@@ -29,12 +34,14 @@ public class BaseLibrary {
 		});
 	}
 	public static FunctionExpressionTreeNode log() {
-		return new FunctionExpressionTreeNode(Double.class, new Class<?>[] { Double.class }, parameters -> Math.log((double)parameters[0]));
+		return new FunctionExpressionTreeNode(Double.class, new Class<?>[] { Double.class }, 
+				parameters -> Math.log((double)parameters[0]));
 	}
 	public static FunctionExpressionTreeNode log10() {
-		return new FunctionExpressionTreeNode(Double.class, new Class<?>[] { Double.class }, parameters -> Math.log10((double)parameters[0]));
+		return new FunctionExpressionTreeNode(Double.class, new Class<?>[] { Double.class }, 
+				parameters -> Math.log10((double)parameters[0]));
 	}
-	public static ConstantExpressionTreeNode constant(double value) {
+	public static ConstantExpressionTreeNode constant(Object value) {
 		return new ConstantExpressionTreeNode(value);
 	}
 	

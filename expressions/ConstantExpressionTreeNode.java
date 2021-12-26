@@ -1,5 +1,7 @@
 package expressions;
 
+
+/** An expression tree node which contains no children and always returns the value it was initialized with. */
 public class ConstantExpressionTreeNode extends ExpressionTreeNode {
 	Object value;
 	

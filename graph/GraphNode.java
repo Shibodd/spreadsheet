@@ -5,38 +5,41 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
-import java.util.function.Predicate;
 
-public class GraphNode {
-	int id;
+/** A generic graph node. */
+public class GraphNode<K, V> {	
+	List<GraphNode<K, V>> children;
+	List<GraphNode<K, V>> parents;
 	
-	List<GraphNode> children;
-	List<GraphNode> parents;
+	K id;
 	
-	public GraphNode(int id) {
+	public V data;
+	
+	public GraphNode(K id, V data) {
 		this.id = id;
-		children = new LinkedList<GraphNode>();
-		parents = new LinkedList<GraphNode>();
+		children = new LinkedList<GraphNode<K, V>>();
+		parents = new LinkedList<GraphNode<K, V>>();
+		this.data = data;
 	}
 	
-	public int getId() { return id; }
-	public List<GraphNode> getChildren() { return Collections.unmodifiableList(children); }
-	public List<GraphNode> getParents() { return Collections.unmodifiableList(parents); }
+	public K getId() { return id; }
+	public List<GraphNode<K, V>> getChildren() { return Collections.unmodifiableList(children); }
+	public List<GraphNode<K, V>> getParents() { return Collections.unmodifiableList(parents); }
 	
-	public void addChild(GraphNode child) {
+	public void addChild(GraphNode<K, V> child) {
 		children.add(child);
 		child.parents.add(this);
 	}
-	public void removeChild(GraphNode child) {
+	public void removeChild(GraphNode<K, V> child) {
 		children.remove(child);
 		child.parents.remove(this);
 	}
 	
-	public void addParent(GraphNode parent) {
+	public void addParent(GraphNode<K, V> parent) {
 		parents.add(parent);
 		parent.children.add(this);
 	}
-	public void removeParent(GraphNode parent) {
+	public void removeParent(GraphNode<K, V> parent) {
 		parents.remove(parent);
 		parent.children.remove(this);
 	}
@@ -52,31 +55,35 @@ public class GraphNode {
 	}
 	
 	
-	public Stack<GraphNode> topologicalSort(Predicate<GraphNode> filter) throws GraphCycleException {
-		HashMap<Integer, DFSInfo> nodesInfo = new HashMap<Integer, DFSInfo>();
+	
+	/** Performs a topological sort on the graph with an iterative DFS, and returns the descendants in topological order. 
+	 * @throws GraphCycleException A cycle was detected in the graph, therefore a topological order cannot be determined.
+	 */
+	public Stack<GraphNode<K, V>> topologicalSort() throws GraphCycleException {
+		HashMap<K, DFSInfo<K, V>> nodesInfo = new HashMap<K, DFSInfo<K, V>>();
 		
-		Stack<GraphNode> stack = new Stack<GraphNode>();
+		Stack<GraphNode<K, V>> stack = new Stack<GraphNode<K, V>>();
 		stack.push(this);
-		nodesInfo.put(id, new DFSInfo(children.iterator(), 0));
+		nodesInfo.put(id, new DFSInfo<K, V>(children.iterator(), 0));
 		
-		Stack<GraphNode> ans = new Stack<GraphNode>();
+		Stack<GraphNode<K, V>> ans = new Stack<GraphNode<K, V>>();
 		
 		for (int t = 0; !stack.isEmpty(); ++t) {
-			GraphNode node = stack.peek();
+			GraphNode<K, V> node = stack.peek();
 			
-			DFSInfo info = nodesInfo.get(node.id);
+			DFSInfo<K, V> info = nodesInfo.get(node.id);
 			
 			// Get the next child of node for which filter tests true
-			DFSInfo childInfo = null;
-			GraphNode child = null;
+			DFSInfo<K, V> childInfo = null;
+			GraphNode<K, V> child = null;
 			while (info.childrenIterator != null && info.childrenIterator.hasNext()) {
-				GraphNode cur = info.childrenIterator.next();
+				GraphNode<K, V> cur = info.childrenIterator.next();
 
 				childInfo = nodesInfo.get(cur.id);
 				
 				if (childInfo == null) {
 					// we haven't yet visited this node.
-					nodesInfo.put(cur.id, new DFSInfo(cur.children.iterator(), t + 1));
+					nodesInfo.put(cur.id, new DFSInfo<K, V>(cur.children.iterator(), t + 1));
 					child = cur;
 					break;
 				}

@@ -1,12 +1,13 @@
 package spreadsheet;
 
-import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 import spreadsheet.Geometry.Point;
 
+
+/** Collection of static methods for working with string cell identifiers.*/
 public class CellIdentifiers {
 	static final int COL_BASE = 'Z' - 'A' + 1;
 	static final String MAX_COL = colToString(Integer.MAX_VALUE);
@@ -18,19 +19,23 @@ public class CellIdentifiers {
 	
 	static final Pattern POINT_RE = Pattern.compile("([A-Z]+)([0-9]+)");
 	
-	public static Point parse(String str) {
+	/** Parses the position of a cell from a string. 
+	 * @throws IllegalArgumentException When the string is not in a valid format, or the column part is too large.
+	 */
+	public static Point parse(String str) throws IllegalArgumentException {
 		Matcher matcher = POINT_RE.matcher(str);
 		
 		if (!matcher.matches())
-			throw new NumberFormatException("The Cell identifier is in the wrong format.");
+			throw new IllegalArgumentException("The Cell identifier is in the wrong format.");
 		
 		return new Point(
-				Integer.parseInt(matcher.group(0)), 
+				Integer.parseInt(matcher.group(2)), 
 				parseCol(matcher.group(1))
 		);
 	}
 	
-	public static int parseCol(String colStr) {
+	/** Parses the column of a cell from colStr. */
+	private static int parseCol(String colStr) throws IllegalArgumentException {
 		if (colStr.length() > MAX_COL_LEN || (colStr.length() == MAX_COL_LEN && colStr.compareTo(MAX_COL) > 0))
 			throw new IllegalArgumentException("The column identifier is too large.");
 		
@@ -43,7 +48,9 @@ public class CellIdentifiers {
 		return col;
 	}
 	
-	public static String colToString(int col) {
+	
+	/** Converts the column of a cell to its string representation. */
+	private static String colToString(int col) throws IllegalArgumentException {
 		if (col < 0)
 			throw new IllegalArgumentException("Argument col must be greater or equal to zero.");
 		if (col == 0)
@@ -57,6 +64,7 @@ public class CellIdentifiers {
 		return builder.reverse().toString();
 	}
 	
+	/** Converts the position of a cell to a string. */
 	public static String toString(Point pt) {
 		return colToString(pt.column) + pt.row;
 	}

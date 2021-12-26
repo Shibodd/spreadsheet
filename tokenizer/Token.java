@@ -1,10 +1,10 @@
 package tokenizer;
 
 public class Token {
-	public int type;
+	public TokenType type;
 	public String token;
 	
-	public Token(int type, String token) {
+	public Token(TokenType type, String token) {
 		this.type = type;
 		this.token = token;
 	}
