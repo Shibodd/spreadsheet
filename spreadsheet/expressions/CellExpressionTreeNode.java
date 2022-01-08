@@ -2,27 +2,22 @@ package spreadsheet.expressions;
 import expressions.ExpressionTreeNode;
 import expressions.InvalidExpressionTreeException;
 import spreadsheet.Cell;
+import spreadsheet.Spreadsheet;
+import spreadsheet.Geometry.GridVector2;
 
 public class CellExpressionTreeNode
 extends ExpressionTreeNode {
-	Cell cell;
+	public final GridVector2 position;
+	final Spreadsheet spreadsheet;
 
-	public CellExpressionTreeNode(Cell cell) {
-		super(null);
-		this.cell = cell;
+	public CellExpressionTreeNode(Spreadsheet spreadsheet, GridVector2 position) {
+		super();
+		this.position = position;
+		this.spreadsheet = spreadsheet;
 	}
 
 	@Override
-	public Object evaluate() throws InvalidExpressionTreeException {
-		return cell.getValue();
-	}
-	
-	public Cell getCell() {
-		return cell;
-	}
-	
-	@Override
-	public Class<?> getResultClass() {
-		return cell.getValueClass();
+	public Object evaluate() {
+		return spreadsheet.getValueAt(position);
 	}
 }

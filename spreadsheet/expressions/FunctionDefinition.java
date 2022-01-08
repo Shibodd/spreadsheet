@@ -1,9 +1,6 @@
 package spreadsheet.expressions;
 
-import java.util.Arrays;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
 import expressions.FunctionExpressionTreeNode;
 
 public class FunctionDefinition {

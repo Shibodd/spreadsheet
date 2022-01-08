@@ -1,15 +1,12 @@
 package expressions;
 
-import java.util.Objects;
-
-
 /** An expression tree node which accumulates the result values of an arbitrary number of children through an accumulator function, with the accumulator initialized to the result value of the first child. */
 public class FirstChildAccumulatorExpressionTreeNode extends ExpressionTreeNode {
 	IExpressionTreeAccumulator accumulator;
 	Class<?> childClass;
 
-	public FirstChildAccumulatorExpressionTreeNode(Class<?> resultClass, Class<?> childClass, IExpressionTreeAccumulator accumulator) {
-		super(resultClass);
+	public FirstChildAccumulatorExpressionTreeNode(Class<?> childClass, IExpressionTreeAccumulator accumulator) {
+		super();
 		this.childClass = childClass;
 		this.accumulator = accumulator;
 	}
@@ -21,15 +18,6 @@ public class FirstChildAccumulatorExpressionTreeNode extends ExpressionTreeNode 
 	@Override
 	public void addChild(ExpressionTreeNode node) 
 			throws InvalidExpressionTreeException {
-		
-		Class<?> childClass = node.getResultClass();
-		if (!Objects.equals(childClass, this.childClass))
-			throw new InvalidExpressionTreeException(
-					String.format(
-							"This node expects childs of type %s, but a parameter of type %s was provided.", 
-							this.childClass.getName(), 
-							childClass == null? "null" : childClass.getName())
-			);
 		
 		super.addChild(node);
 	}
@@ -45,9 +33,9 @@ public class FirstChildAccumulatorExpressionTreeNode extends ExpressionTreeNode 
 		if (children.size() <= 0)
 			throw new InvalidExpressionTreeException("This accumulator node has no children and thus can't be evaluated.");
 
-		Object result = children.get(0).evaluate();
+		Object result = evaluateChildAndTypeCheck(0, childClass);
 	    for (int i = 1; i < children.size(); ++i)
-	    	result = accumulator.accumulate(result, children.get(i).evaluate());
+	    	result = accumulator.accumulate(result, evaluateChildAndTypeCheck(i, childClass));
 	    
 	    return result;
 	}

@@ -1,7 +1,8 @@
 package tokenizer;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Stack;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -11,12 +12,12 @@ import java.util.regex.Pattern;
 public class Tokenizer {
 	TokenType[] language;
 	Pattern[] languagePatterns;
-	Matcher[] matchers;
+
+	List<Token> tokens;
+	int token_i;
 	
 	String expression;
 	int char_i;
-	
-	Stack<Token> tokenQueue;
 	
 	/** @param language The token types. 
 	 * When reading tokens, the first token type whose regex matches determines the token read. */
@@ -24,49 +25,69 @@ public class Tokenizer {
 		this.language = language;
 		this.languagePatterns = 
 				Arrays.stream(language)
-					.map(x -> Pattern.compile("^" + x))
+					.map(x -> Pattern.compile("^" + x.regex))
 					.toArray(count -> new Pattern[count]);
 	}	
 	
-	/** Starts a new tokenization */
-	public void reset(String expression) {
+	/** Tokenizes an expression. */
+	public void tokenize(String expression) throws TokenizeException {
 		this.expression = expression;
-		this.tokenQueue = new Stack<Token>();
-		this.matchers = Arrays.stream(languagePatterns)
-					.map(x -> x.matcher(expression))
-					.toArray(count -> new Matcher[count]);
-
+		this.tokens = new ArrayList<Token>();
+		
 		this.char_i = 0;
+		this.token_i = 0;
+		
+		Matcher[] matchers = Arrays.stream(languagePatterns)
+				.map(x -> x.matcher(expression))
+				.toArray(count -> new Matcher[count]);
+		Token tok;
+		while ((tok = readToken(matchers)) != null)
+			tokens.add(tok);
 	}
 	
-	/** Returns whether there is any token left to be consumed. */
-	public boolean exhausted() {
-		return tokenQueue.size() <= 0 && eof();
+	public Token nextToken() {
+		Token tok = token_i >= tokens.size()? null : tokens.get(token_i++);
+		
+		return tok;
 	}
 	
-	
-	/** Consumes any whitespace and returns whether the cursor is at the end of the expression. */ 
-	private boolean eof() {
-		consumeWhitespace();
-		return char_i >= expression.length();
+	public int tellToken() {
+		return token_i;
 	}
 	
-	/** Queues token to be returned by a nextToken operation instead of parsing new tokens. */
-	public void pushBack(Token token) {
-		tokenQueue.push(token);
-	}
-	
-	/** Reads a new token if there are no tokens in the pushBack queue, or else returns the first token in the queue. */
-	public Token nextToken() throws TokenizeException {
-		if (tokenQueue.size() > 0)
-			return tokenQueue.pop();
+	public void pushBack() {
+		if (token_i > 0)
+			--token_i;
 		else
-			return readToken();
+			throw new IllegalStateException("No more tokens can be pushed back.");
 	}
 	
+	public Token peek() {
+		if (exhausted())
+			return null;
+		else
+			return tokens.get(token_i);
+	}
+	
+	public void seekToken(int token_i) {
+		if (token_i < 0 || token_i >= tokens.size())
+			throw new IllegalArgumentException();
+		
+		this.token_i = token_i;
+	}
+	
+	public boolean exhausted() {
+		return token_i >= tokens.size();
+	}
+
 	/** Reads a new token, advancing the cursor. */
-	private Token readToken() throws TokenizeException {
-		if (eof())
+	private Token readToken(Matcher[] matchers) throws TokenizeException {
+		// Consume any whitespace.
+		while (char_i < expression.length() && Character.isWhitespace(expression.charAt(char_i)))
+			++char_i;
+		
+		// Check if there's anything left to read.
+		if (char_i >= expression.length())
 			return null;
 		
 		for (int i = 0; i < matchers.length; ++i) {
@@ -75,16 +96,10 @@ public class Tokenizer {
 			
 			if (matcher.find()) {
 				char_i = matcher.end();
-				return new Token(language[i], matcher.group());
+				return new Token(language[i], matcher.group(), matcher.start());
 			}
 		}
 		
-		throw new TokenizeException(String.format("Unexpected character %c in position %d in string %s.", expression.charAt(char_i), char_i, expression));
-	}
-	
-	/** Advances the cursor until the next non whitespace character. */
-	private void consumeWhitespace() {
-		while (char_i < expression.length() && Character.isWhitespace(expression.charAt(char_i)))
-			++char_i;
+		throw new TokenizeException(String.format("Unexpected character \"%c\" at position %d.", expression.charAt(char_i), char_i, expression));
 	}
 }

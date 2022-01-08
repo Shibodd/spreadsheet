@@ -1,5 +1,5 @@
 package spreadsheet;
 
 public interface IDependencyChangedListener {
-	void onDependencyChanged();
+	void onDependencyChanged(Object sender);
 }

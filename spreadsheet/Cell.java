@@ -1,60 +1,70 @@
 package spreadsheet;
 
+import java.util.ArrayList;
 import java.util.Objects;
+import java.util.Stack;
 
 import expressions.ConstantExpressionTreeNode;
 import expressions.ExpressionTreeNode;
 import expressions.InvalidExpressionTreeException;
 import graph.GraphCycleException;
 import graph.GraphNode;
-import spreadsheet.Geometry.Point;
+import spreadsheet.Geometry.GridVector2;
 import spreadsheet.expressions.CellExpressionTreeNode;
 
 
 /** Data structure for cells, which caches the result value of the expressionTree and can be notified of dependency changes to reevaluate itself.*/
 public class Cell implements IDependencyChangedListener {
-	Point position;
+	GridVector2 position;
 	String expression;
 	
 	GraphNode<String, IDependencyChangedListener> dependencyGraphNode;
+	ICellValueChangedListener cellValueChangedListener;
 	
 	ExpressionTreeNode expressionTree;
 	Object value;
 
-	public Cell(Point position) {
+	public Cell(GridVector2 position, ICellValueChangedListener valueChangedListener) {
 		this.position = position;
 		this.expression = "";
 		this.expressionTree = new ConstantExpressionTreeNode(expression);
+		this.value = "";
 		this.dependencyGraphNode = 
 				new GraphNode<String, IDependencyChangedListener>(
 						String.format("%d,%d", position.row, position.column), 
 						this
 				);
+		this.cellValueChangedListener = valueChangedListener;
 	}
+	
+	public GridVector2 getPosition() { return position; }
+	public String getExpression() { return expression; }
+	public Object getValue() { return value; }
+
 	
 	@Override
-	public void onDependencyChanged() {
+	public void onDependencyChanged(Object sender) {
 		evaluate();
 	}
-	
-	public Object getValue() {
-		return value;
-	}
-	
-	public Class<?> getValueClass() {
-		return expressionTree.getResultClass();
-	}
-	
-	
+
 	/** Evaluates the expression and, if the value has changed, notifies its descendants in the dependency graph. */
-	public void updateValue() throws GraphCycleException {
+	public void updateValue()  {
 		Object oldValue = value;
 		
 		evaluate();
 		
-		if (!Objects.equals(oldValue, value))
-			for (GraphNode<String, IDependencyChangedListener> child : dependencyGraphNode.topologicalSort())
-				child.data.onDependencyChanged();
+		try {
+			if (!Objects.equals(oldValue, value)) {
+				Stack<GraphNode<String, IDependencyChangedListener>> nodes = dependencyGraphNode.topologicalSort();
+				
+				nodes.pop(); // skip the first as it is this node
+				
+				while (!nodes.empty())
+					nodes.pop().data.onDependencyChanged(this);
+			}
+		} catch (GraphCycleException ex) {
+			this.value = new CellEvaluationError(new InvalidExpressionTreeException("The expression presents a circular reference."));
+		}
 	}
 	
 	
@@ -63,10 +73,16 @@ public class Cell implements IDependencyChangedListener {
 		if (expressionTree == null)
 			throw new IllegalStateException("The expression hasn't yet been compiled.");
 		
+		Object oldValue = value;
+		
 		try {
-			this.value = expressionTree.evaluate();
-		} catch (InvalidExpressionTreeException e) {
-			this.value = null;
+			this.value = expressionTree.evaluate();			
+		} catch (InvalidExpressionTreeException ex) {
+			this.value = new CellEvaluationError(ex);
 		}
+		
+		if (!Objects.equals(oldValue, value) && cellValueChangedListener != null)
+			cellValueChangedListener.onCellValueChanged(position);
+			
 	}
 }

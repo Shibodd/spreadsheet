@@ -1,5 +1,6 @@
 package expressions;
 
+import java.util.Objects;
 import java.util.function.Function;
 /** An expression tree node which executes a function, with the children's result value as parameters. */
 public class FunctionExpressionTreeNode extends ExpressionTreeNode {
@@ -8,12 +9,11 @@ public class FunctionExpressionTreeNode extends ExpressionTreeNode {
 	
 	
 	/**
-	 * @param resultType The result class of the function.
 	 * @param parameterClasses An array containing the classes of the parameters. The amount of parameters is determined by the length of this array.
 	 * @param function The function to execute.
 	 */
-	public FunctionExpressionTreeNode(Class<?> resultType, Class<?>[] parameterClasses, Function<Object[], Object> function) {
-		super(resultType);
+	public FunctionExpressionTreeNode(Class<?>[] parameterClasses, Function<Object[], Object> function) {
+		super();
 		
 		this.parameterClasses =	parameterClasses;
 		this.function = function;
@@ -30,12 +30,6 @@ public class FunctionExpressionTreeNode extends ExpressionTreeNode {
 		if (children.size() >= parameterClasses.length)
 			throw new InvalidExpressionTreeException(
 					String.format("Too many parameters provided - this function only expects %d.", parameterClasses.length)
-			);
-		
-		if (!node.resultClass.equals(parameterClasses[children.size()]))
-			throw new InvalidExpressionTreeException(
-					String.format("The class %s of the %d parameter differs from the declared class %s.", 
-							node.resultClass.getName(), children.size(), parameterClasses[children.size()])
 			);
 		
 		super.addChild(node);
@@ -56,8 +50,9 @@ public class FunctionExpressionTreeNode extends ExpressionTreeNode {
 
 		Object[] parameters = new Object[parameterClasses.length];
 		for (int i = 0; i < parameterClasses.length; ++i)
-			parameters[i] = children.get(i).evaluate();
+			parameters[i] = evaluateChildAndTypeCheck(i, parameterClasses[i]);
 		
-		return resultTypeCheck(function.apply(parameters));
+		return function.apply(parameters);
 	}
+	
 }

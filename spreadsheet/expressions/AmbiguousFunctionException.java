@@ -1,6 +1,6 @@
 package spreadsheet.expressions;
 
-public class AmbiguousFunctionException extends Exception {
+public class AmbiguousFunctionException extends RuntimeException {
 	public AmbiguousFunctionException() { super(); }
 	public AmbiguousFunctionException(String message) { super(message); }
 	public AmbiguousFunctionException(Throwable cause) { super(cause); }

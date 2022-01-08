@@ -6,7 +6,7 @@ public class ConstantExpressionTreeNode extends ExpressionTreeNode {
 	Object value;
 	
 	public ConstantExpressionTreeNode(Object value) {
-		super(value.getClass());
+		super();
 		this.value = value;
 	}
 

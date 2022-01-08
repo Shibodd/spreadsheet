@@ -1,19 +1,18 @@
 package spreadsheet;
 
-import spreadsheet.Geometry.*;
+import java.lang.reflect.InvocationTargetException;
+
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
+
+import spreadsheet.expressions.AmbiguousFunctionException;
+import spreadsheet.gui.MainWindow;
 
 
 public class Main {	
-	public static void main(String[] args) throws Exception {
-		Spreadsheet spreadsheet = new Spreadsheet();
+	public static void main(String[] args) throws InvocationTargetException, InterruptedException {
+		App app = new App();
 		
-		Cell cell = spreadsheet.getCellAt(new Point(1, 1));
-		Cell cell2 = spreadsheet.getCellAt(new Point(0, 0));
-		
-		spreadsheet.updateExpression(cell, "=-4");
-		spreadsheet.updateExpression(cell2, "=-3 * B1");
-		spreadsheet.updateExpression(cell, "=-3 * 3");
-		
-		System.out.println(cell2.getValue());
+		SwingUtilities.invokeAndWait(() -> app.run());
 	}
 }

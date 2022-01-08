@@ -27,6 +27,9 @@ public class GraphNode<K, V> {
 	public List<GraphNode<K, V>> getParents() { return Collections.unmodifiableList(parents); }
 	
 	public void addChild(GraphNode<K, V> child) {
+		if (children.contains(child))
+			return;
+		
 		children.add(child);
 		child.parents.add(this);
 	}
@@ -36,6 +39,9 @@ public class GraphNode<K, V> {
 	}
 	
 	public void addParent(GraphNode<K, V> parent) {
+		if (parents.contains(parent))
+			return;
+		
 		parents.add(parent);
 		parent.children.add(this);
 	}
@@ -55,18 +61,24 @@ public class GraphNode<K, V> {
 	}
 	
 	
-	
-	/** Performs a topological sort on the graph with an iterative DFS, and returns the descendants in topological order. 
+	/** Performs a topological sort on the graph with an iterative DFS and returns the nodes in topological order. 
 	 * @throws GraphCycleException A cycle was detected in the graph, therefore a topological order cannot be determined.
 	 */
 	public Stack<GraphNode<K, V>> topologicalSort() throws GraphCycleException {
-		HashMap<K, DFSInfo<K, V>> nodesInfo = new HashMap<K, DFSInfo<K, V>>();
+		Stack<GraphNode<K, V>> ans = new Stack<GraphNode<K, V>>();
 		
+		topologicalSort(ans, new HashMap<K, DFSInfo<K, V>>());
+		
+		return ans;
+	}
+	
+	/** Performs a topological sort on the graph with an iterative DFS using parameter nodesInfo to store the DFS data, and pushes the nodes on the stack passed as parameter. 
+	 * @throws GraphCycleException A cycle was detected in the graph, therefore a topological order cannot be determined.
+	 */
+	public void topologicalSort(Stack<GraphNode<K, V>> ans, HashMap<K, DFSInfo<K, V>> nodesInfo) throws GraphCycleException {
 		Stack<GraphNode<K, V>> stack = new Stack<GraphNode<K, V>>();
 		stack.push(this);
 		nodesInfo.put(id, new DFSInfo<K, V>(children.iterator(), 0));
-		
-		Stack<GraphNode<K, V>> ans = new Stack<GraphNode<K, V>>();
 		
 		for (int t = 0; !stack.isEmpty(); ++t) {
 			GraphNode<K, V> node = stack.peek();
@@ -104,7 +116,5 @@ public class GraphNode<K, V> {
 				stack.push(child); // child is the next node to be evaluated.
 			}
 		}
-		
-		return ans;
 	}
 }

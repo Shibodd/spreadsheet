@@ -13,7 +13,7 @@ public enum ExpressionTokenType {
 			"+ or -",
 			"[+\\-]"),
 	
-	FACTOR_OPERATOR(
+	TERM_OPERATOR(
 			"* or /",
 			"[*/]"),
 	
@@ -38,7 +38,7 @@ public enum ExpressionTokenType {
 			",");
 	
 	
-	TokenType type;
+	final TokenType type;
 	
 	ExpressionTokenType(String description, String pattern) {
 		type = new TokenType(pattern, description);

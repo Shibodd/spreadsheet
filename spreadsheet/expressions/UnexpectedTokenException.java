@@ -9,33 +9,43 @@ public class UnexpectedTokenException extends Exception {
 	public final Token unexpectedToken;
 	public final TokenType[] expectedTokens;
 	
-	public UnexpectedTokenException(String message) {
-		super(message);
-		
-		unexpectedToken = null;
-		expectedTokens = null;
-	}
-	
 	public UnexpectedTokenException(Token unexpectedToken, TokenType... expectedTokens) {
 		super();
 		
 		this.unexpectedToken = unexpectedToken;
 		this.expectedTokens = expectedTokens;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	@Override
 	public String getMessage() {
+		String expected = null;
+		
+		if (expectedTokens != null && expectedTokens.length > 0)		
+			expected = "one of " + "\"" + String.join("\", \"", Arrays.stream(expectedTokens).map(x -> x.description).toArray(count -> new String[count])) + "\"";
+
 		if (unexpectedToken == null)
-			return super.getMessage();
-		else if (expectedTokens == null || expectedTokens.length <= 0) {
-			return String.format("Unexpected token \"%s\" found.", unexpectedToken.token);
-		} else {
-			return String.format("Unexpected token \"%s\" (%s) found, when one of %s was expected.", 
-					unexpectedToken.token,
+			if (expected == null)
+				return "Unexpected end of expression found.";
+			else
+				return String.format(
+						"Unexpected end of expression found, when %s was expected.", 
+						expected
+				);
+		else if (expected != null)
+			return String.format(
+					"Unexpected token \"%s\" (\"%s\") found at character %d, when %s was expected.", 
+					unexpectedToken.token, 
 					unexpectedToken.type.description,
-					String.join(", ", (Iterable<String>)Arrays.stream(expectedTokens).map(x -> x.description))
+					unexpectedToken.startIndex,
+					expected
 			);
-		}
+		else
+			return String.format(
+					"Unexpected token \"%s\" (\"%s\") found at character %d.", 
+					unexpectedToken.token, 
+					unexpectedToken.type.description,
+					unexpectedToken.startIndex
+			);
 	}
 }

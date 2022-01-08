@@ -1,7 +1,9 @@
 package spreadsheet.expressions;
 
-import spreadsheet.Geometry.Point;
+import spreadsheet.Geometry.GridVector2;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Function;
 
 import expressions.ConstantExpressionTreeNode;
@@ -11,6 +13,7 @@ import expressions.InvalidExpressionTreeException;
 import spreadsheet.Cell;
 import spreadsheet.CellIdentifiers;
 import spreadsheet.Range;
+import spreadsheet.Spreadsheet;
 import tokenizer.Token;
 import tokenizer.TokenType;
 import tokenizer.TokenizeException;
@@ -21,12 +24,12 @@ import tokenizer.Tokenizer;
 public class ExpressionCompiler {	
 	public final Tokenizer tokenizer;
 	public final FunctionLibrary library;
-	final Function<Point, Cell> cellProvider;
+	final Spreadsheet spreadsheet;
 	
-	public ExpressionCompiler(Function<Point, Cell> cellProvider) {
+	public ExpressionCompiler(Spreadsheet spreadsheet, FunctionLibrary functionLibrary) throws AmbiguousFunctionException {
 		this.tokenizer = new Tokenizer(ExpressionTokenType.toLanguage());
-		this.library = new FunctionLibrary();
-		this.cellProvider = cellProvider;
+		this.library = functionLibrary;
+		this.spreadsheet = spreadsheet;
 	}
 	
 	
@@ -35,11 +38,14 @@ public class ExpressionCompiler {
 	 * @throws InvalidExpressionTreeException 
 	 * @throws UnexpectedTokenException */
 	public ExpressionTreeNode compile(String expression) throws TokenizeException, UnexpectedTokenException, InvalidExpressionTreeException, UnknownFunctionException{
-		tokenizer.reset(expression);
+		tokenizer.tokenize(expression);
 		
 		ExpressionTreeNode compiled = readExpression();
+		
 		if (!tokenizer.exhausted())
-			throw new UnexpectedTokenException("");
+			throw new UnexpectedTokenException(tokenizer.nextToken(), null);
+		
+		// throw if the tokenizer isn't exhausted
 		return compiled;
 	}
 
@@ -51,26 +57,26 @@ public class ExpressionCompiler {
 	 * @throws InvalidExpressionTreeException 
 	 * @throws UnknownFunctionException 
 	 */
-	private ExpressionTreeNode readExpression() throws TokenizeException, UnexpectedTokenException, InvalidExpressionTreeException, UnknownFunctionException {
-		ExpressionTreeNode fact1 = readFactor();
+	private ExpressionTreeNode readExpression() throws UnexpectedTokenException, InvalidExpressionTreeException, UnknownFunctionException {
+		System.out.println("expr\t" + tokenizer.peek());
+		
+		ExpressionTreeNode fact1 = readTerm();
 		
 		Token op_token = tokenizer.nextToken();
 		if (op_token == null)
 			return fact1;
 		if (op_token.type != ExpressionTokenType.EXPRESSION_OPERATOR.type) {
-			tokenizer.pushBack(op_token);
+			tokenizer.pushBack();
 			return fact1;
 		}
 		
 		ExpressionTreeNode expr = readExpression();
-		if (expr == null)
-			throw unexpectedEnd();
 		
 		ExpressionTreeNode operation; 
 		if (op_token.token.equals("+"))
-			operation = BaseLibrary.sum();
+			operation = BaseLibrary.op_sum();
 		else if (op_token.token.equals("-"))
-			operation = BaseLibrary.subtraction();
+			operation = BaseLibrary.op_subtraction();
 		else
 			throw new Error("Unexpected operator due to a program error.");
 		
@@ -79,42 +85,71 @@ public class ExpressionCompiler {
 		
 		return operation;
 	}
+	
+	
+	/** Reads a token and performs type checks.
+	 * @param eofIsExpected If false, throws if the token read is null.
+	 * @param tokenTypes The allowed token types. If null, any token is accepted and only a null check is performed, considering eofIsExpected.
+	 */
+	private Token expectTokenOf(boolean eofIsExpected, TokenType... tokenTypes) throws UnexpectedTokenException {
+		Token tok = tokenizer.nextToken();
+		if (tok == null) {
+			if (eofIsExpected)
+				return null;
+			else
+				throw new UnexpectedTokenException(null, tokenTypes);
+		}
+		
+		if (tokenTypes == null || tokenTypes.length == 0 || Arrays.asList(tokenTypes).contains(tok.type))
+			return tok;
+		else {
+			throw new UnexpectedTokenException(tok, tokenTypes);
+		}
+	}
+	
+	private List<ExpressionTreeNode> readFunctionParameters() throws UnexpectedTokenException, InvalidExpressionTreeException, UnknownFunctionException {
+		ArrayList<ExpressionTreeNode> parameters = new ArrayList<ExpressionTreeNode>();
+		
+		Token tok = tokenizer.nextToken();
+		if (tok != null && tok.type == ExpressionTokenType.CLOSING_PARENS.type)
+			return parameters;
+		else
+			tokenizer.pushBack();
+		
+		while (true) {
+			ExpressionTreeNode expr = readExpression();				
+			
+			parameters.add(expr);
 
+			Token paramTok = expectTokenOf(false, ExpressionTokenType.CLOSING_PARENS.type, ExpressionTokenType.COMMA.type);
+			if (paramTok.type == ExpressionTokenType.CLOSING_PARENS.type)
+				break;
+		}
+		
+		return parameters;	
+	}
+	
+	
 	/** Reads an operand (a parenthesized expression, a number constant, a function call, a range, a cell. */
-	private ExpressionTreeNode readOperand() throws TokenizeException, UnexpectedTokenException, InvalidExpressionTreeException, UnknownFunctionException {
-		Token operand_tok = tokenizer.nextToken();
-		if (operand_tok == null)
-			return null;
+	private ExpressionTreeNode readOperand() throws UnexpectedTokenException, InvalidExpressionTreeException, UnknownFunctionException {
+		System.out.println("operand\t" + tokenizer.peek());
+		
+		Token operand_tok = expectTokenOf(false, ExpressionTokenType.NUMBER.type, ExpressionTokenType.OPENING_PARENS.type, ExpressionTokenType.IDENTIFIER.type);
 		
 		// OPERAND := NUMBER | FUNCTION | RANGE | CELL | \(EXPRESSION\)
-		// FUNCTION := IDENTIFIER\(PARAMETERS\)
-		// PARAMETERS := |EXPRESSION(,EXPRESSION)*
+		// FUNCTION := IDENTIFIER\( (EXPRESSION(,EXPRESSION)*)? \)
 		// RANGE := IDENTIFIER:IDENTIFIER
 		// CELL := IDENTIFIER
 		
 		if (operand_tok.type == ExpressionTokenType.NUMBER.type)
 			// NUMBER
-			return BaseLibrary.constant(Double.parseDouble(operand_tok.token));		
+			return new ConstantExpressionTreeNode(Double.parseDouble(operand_tok.token));		
 		else if (operand_tok.type == ExpressionTokenType.IDENTIFIER.type) {
 			Token next = tokenizer.nextToken();
-
+			
 			if (next != null && next.type == ExpressionTokenType.OPENING_PARENS.type) {
 				// FUNCTION
-				// PARAMETERS
-				ArrayList<ExpressionTreeNode> parameters = new ArrayList<ExpressionTreeNode>();
-				while (true) {
-					ExpressionTreeNode expr = readExpression();
-					if (expr == null && tokenizer.exhausted())
-						throw unexpectedEnd();
-					
-					parameters.add(expr);
-					
-					Token paramTok = tokenizer.nextToken();
-					if (paramTok.type == ExpressionTokenType.CLOSING_PARENS.type)
-						break;
-					if (paramTok.type != ExpressionTokenType.COMMA.type)
-						throw unexpectedToken(paramTok, ExpressionTokenType.COMMA.type);
-				}
+				List<ExpressionTreeNode> parameters = readFunctionParameters();
 				
 				FunctionExpressionTreeNode func = library.makeFunctionInstance(operand_tok.token, parameters.size());
 				for (ExpressionTreeNode param : parameters)
@@ -123,85 +158,69 @@ public class ExpressionCompiler {
 				return func;
 			} else if (next != null && next.type == ExpressionTokenType.COLON.type) {
 				// RANGE
-				Token range_end_tok = tokenizer.nextToken();
-				if (range_end_tok == null)
-					throw unexpectedEnd();
-				if (range_end_tok.type == ExpressionTokenType.IDENTIFIER.type) {
-					Point start = CellIdentifiers.parse(operand_tok.token);
-					Point end = CellIdentifiers.parse(range_end_tok.token);
-					
-					return BaseLibrary.constant(new Range(start, end));
-				} else
-					throw unexpectedToken(range_end_tok, ExpressionTokenType.IDENTIFIER.type);
-			} else
+				
+				Token range_end_tok = expectTokenOf(false, ExpressionTokenType.IDENTIFIER.type);
+				
+				GridVector2 start = CellIdentifiers.parse(operand_tok.token);
+				GridVector2 end = CellIdentifiers.parse(range_end_tok.token);
+				
+				return new ConstantExpressionTreeNode(new Range(start, end));
+			} else {
 				// CELL
-				return new CellExpressionTreeNode(cellProvider.apply(CellIdentifiers.parse(operand_tok.token)));
+				if (next != null)
+					tokenizer.pushBack();
+				return new CellExpressionTreeNode(spreadsheet, CellIdentifiers.parse(operand_tok.token));
+			}
 		}
 		else if (operand_tok.type == ExpressionTokenType.OPENING_PARENS.type) {
 			// \(EXPRESSION\)
-			
 			ExpressionTreeNode expr = readExpression();
-			Token tok = tokenizer.nextToken();
-			if (tok == null)
-				throw unexpectedEnd();
 			
-			if (tok.type != ExpressionTokenType.CLOSING_PARENS.type)
-				throw unexpectedToken(tok, ExpressionTokenType.CLOSING_PARENS.type);
+			expectTokenOf(false, ExpressionTokenType.CLOSING_PARENS.type);
+			
 			return expr;
-		}
-		else {
-			tokenizer.pushBack(operand_tok);
-			return null;
-		}
+		} else
+			throw new Error("lmao");
 	}
 	
-	/** Reads a factor (an optional expression operator before an operand, optionally followed by a * or / operator and another factor. */
-	private ExpressionTreeNode readFactor() throws TokenizeException, UnexpectedTokenException, InvalidExpressionTreeException, UnknownFunctionException {
+	/** Reads a term (an optional expression operator before an operand, optionally followed by a * or / operator and another term. */
+	private ExpressionTreeNode readTerm() throws UnexpectedTokenException, InvalidExpressionTreeException, UnknownFunctionException {
+		System.out.println("term\t" + tokenizer.peek());
+		
 		ExpressionTreeNode operand;
 		
-		// FACTOR := EXPRESSIONOP? OPERAND (FACTOROP FACTOR)?
+		// TERM := EXPRESSIONOP? OPERAND (TERMOP TERM)?
 		
 		// If the first token is an operator, then expect an unary operation
-		Token unary_op_tok = tokenizer.nextToken();
-		if (unary_op_tok == null)
-			return null;
-		
+		Token unary_op_tok = expectTokenOf(false);
 		if (unary_op_tok.type == ExpressionTokenType.EXPRESSION_OPERATOR.type) {
 			operand = readOperand();
-			if (operand == null) // We have an operator but no operand for it
-				throw unexpectedEnd();
 			
 			// The only unary operator we have is numeric negation. The + operator does nothing.
 			if (unary_op_tok.token.equals("-")) {
-				ExpressionTreeNode op = BaseLibrary.numericNegation();
+				ExpressionTreeNode op = BaseLibrary.op_numericNegation();
 				op.addChild(operand);
 				operand = op;
 			}
 		} else {
-			tokenizer.pushBack(unary_op_tok); 
-			
+			tokenizer.pushBack();
 			operand = readOperand();
-			if (operand == null)
-				return null;
 		}
 		
 		Token op_token = tokenizer.nextToken();
-		if (op_token == null)
-			return operand;
-		if (op_token.type != ExpressionTokenType.FACTOR_OPERATOR.type) {
-			tokenizer.pushBack(op_token);
+		if (op_token == null || op_token.type != ExpressionTokenType.TERM_OPERATOR.type) {
+			if (op_token != null)
+				tokenizer.pushBack();
 			return operand;
 		}
 		
-		ExpressionTreeNode secondOperand = readFactor();
-		if (secondOperand == null)
-			throw unexpectedEnd();
+		ExpressionTreeNode secondOperand = readTerm();
 		
-		ExpressionTreeNode operation; 
+		ExpressionTreeNode operation;
 		if (op_token.token.equals("*"))
-			operation = BaseLibrary.product();
+			operation = BaseLibrary.op_product();
 		else if (op_token.token.equals("/"))
-			operation = BaseLibrary.division();
+			operation = BaseLibrary.op_division();
 		else
 			throw new Error("Unexpected operator due to a program error.");
 		
@@ -209,14 +228,5 @@ public class ExpressionCompiler {
 		operation.addChild(secondOperand);
 		
 		return operation;
-	}
-
-	
-	private UnexpectedTokenException unexpectedEnd() {
-		return new UnexpectedTokenException("The expression is not complete.");
-	}
-	
-	private UnexpectedTokenException unexpectedToken(Token unexpectedToken, TokenType... expectedTokenTypes) {
-		return new UnexpectedTokenException(unexpectedToken, expectedTokenTypes);
 	}
 }

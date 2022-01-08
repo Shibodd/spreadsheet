@@ -1,49 +1,59 @@
 package spreadsheet.expressions;
 
-
-import expressions.ConstantExpressionTreeNode;
 import expressions.ExpressionTreeNode;
 import expressions.FirstChildAccumulatorExpressionTreeNode;
 import expressions.FunctionExpressionTreeNode;
 
 public class BaseLibrary {
-	public static ExpressionTreeNode sum() {
-		return new FirstChildAccumulatorExpressionTreeNode(Double.class, Double.class, (acc, x) -> (double)acc + (double)x);
+	public static ExpressionTreeNode op_sum() {
+		return new FirstChildAccumulatorExpressionTreeNode(Double.class, (acc, x) -> (double)acc + (double)x);
 	}
-	public static ExpressionTreeNode subtraction() {
-		return new FirstChildAccumulatorExpressionTreeNode(Double.class, Double.class, (acc, x) -> (double)acc - (double)x);
+	public static ExpressionTreeNode op_subtraction() {
+		return new FirstChildAccumulatorExpressionTreeNode(Double.class, (acc, x) -> (double)acc - (double)x);
 	}
-	public static ExpressionTreeNode product() {
-		return new FirstChildAccumulatorExpressionTreeNode(Double.class, Double.class, (acc, x) -> (double)acc * (double)x);
+	public static ExpressionTreeNode op_product() {
+		return new FirstChildAccumulatorExpressionTreeNode(Double.class, (acc, x) -> (double)acc * (double)x);
 	}
-	public static ExpressionTreeNode division() {
-		return new FirstChildAccumulatorExpressionTreeNode(Double.class, Double.class, (acc, x) -> (double)acc / (double)x);
+	public static ExpressionTreeNode op_division() {
+		return new FirstChildAccumulatorExpressionTreeNode(Double.class, (acc, x) -> (double)acc / (double)x);
 	}
-	
-	public static ExpressionTreeNode numericNegation() {
-		return new FunctionExpressionTreeNode(Double.class, new Class<?>[] { Double.class }, 
+	public static ExpressionTreeNode op_numericNegation() {
+		return new FunctionExpressionTreeNode(new Class<?>[] { Double.class }, 
 				parameters -> -(double)parameters[0]);
 	}
 	
-	public static FunctionExpressionTreeNode logBase() {
-		return new FunctionExpressionTreeNode(Double.class, new Class<?>[] { Double.class, Double.class }, parameters -> {
-			double num = (double)parameters[0];
-			double base = (double)parameters[1];
-			
-			return Math.log(num) / Math.log(base);
-		});
-	}
-	public static FunctionExpressionTreeNode log() {
-		return new FunctionExpressionTreeNode(Double.class, new Class<?>[] { Double.class }, 
-				parameters -> Math.log((double)parameters[0]));
-	}
-	public static FunctionExpressionTreeNode log10() {
-		return new FunctionExpressionTreeNode(Double.class, new Class<?>[] { Double.class }, 
-				parameters -> Math.log10((double)parameters[0]));
-	}
-	public static ConstantExpressionTreeNode constant(Object value) {
-		return new ConstantExpressionTreeNode(value);
+	public static double log(double x, double base) { return Math.log(x) / Math.log(base); }
+	public static String concat(String a, String b) { return a + b; }
+	
+	private static void importBase(FunctionLibrary library) throws AmbiguousFunctionException, NoSuchMethodException, SecurityException {
+		Class<?> baseClass = BaseLibrary.class;
+		
+		library.importMethod(baseClass.getMethod("log", double.class, double.class));
+		library.importMethod(baseClass.getMethod("concat", String.class, String.class));
 	}
 	
+	
+	private static void importMath(FunctionLibrary library) throws AmbiguousFunctionException, NoSuchMethodException, SecurityException {
+		Class<?> mathClass = Math.class;
+		
+		String[] methods = new String[] { "abs", "log", "sin", "cos", "acos", "asin", "atan" };
+		for (String name : methods)
+			library.importMethod(mathClass.getMethod(name, double.class));
+		
+		library.importMethod(mathClass.getMethod("random"));
+	}
+	
+	public static FunctionLibrary makeBaseLibrary() throws AmbiguousFunctionException {
+		FunctionLibrary library = new FunctionLibrary();
+		
+		try {
+			importMath(library);
+			importBase(library);
+		} catch (NoSuchMethodException | SecurityException | AmbiguousFunctionException e) {
+			throw new Error("Failed to create the base library: " + e.getMessage());
+		}
+		
+		return library;
+	}
 }
 
