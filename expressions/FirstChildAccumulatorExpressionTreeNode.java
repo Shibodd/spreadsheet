@@ -5,33 +5,27 @@ public class FirstChildAccumulatorExpressionTreeNode extends ExpressionTreeNode 
 	IExpressionTreeAccumulator accumulator;
 	Class<?> childClass;
 
+	
+	
+	/**
+	 * @param childClass The classes the children values should have.
+	 * @param accumulator The accumulator that is invoked for each child when evaluate is called.
+	 */
 	public FirstChildAccumulatorExpressionTreeNode(Class<?> childClass, IExpressionTreeAccumulator accumulator) {
 		super();
 		this.childClass = childClass;
 		this.accumulator = accumulator;
 	}
 	
-	
-	/** Adds a child to the node.
-	 * @throws InvalidExpressionTreeException The result class of node differs from the expected passed as parameter to the constructor.
-	 */
-	@Override
-	public void addChild(ExpressionTreeNode node) 
-			throws InvalidExpressionTreeException {
-		
-		super.addChild(node);
-	}
-	
-	
-	/** Accumulates the values and returns the result.
-	 * @throws InvalidExpressionTreeException No children were added to this node.
+	/** Accumulates the values initializing the accumulator to the first child's result, and then returns the value of the accumulator.
+	 * @throws IllegalStateException If this node has no children.
 	 */
 	@Override
 	public Object evaluate() 
-			throws InvalidExpressionTreeException  {
+			throws ExpressionTreeTypeException  {
 		
 		if (children.size() <= 0)
-			throw new InvalidExpressionTreeException("This accumulator node has no children and thus can't be evaluated.");
+			throw new IllegalStateException("An accumulator node must have at least one children before it can be evaluated.");
 
 		Object result = evaluateChildAndTypeCheck(0, childClass);
 	    for (int i = 1; i < children.size(); ++i)

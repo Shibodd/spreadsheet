@@ -7,6 +7,7 @@ import javax.swing.border.Border;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+/** Validates a document with a Predicate, changing the border of a textField if it is not valid. */
 public class TextFieldVisualValidation implements DocumentListener {
 	final JTextField field;
 	boolean wasSuccessful;

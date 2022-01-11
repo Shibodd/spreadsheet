@@ -1,8 +1,15 @@
 package spreadsheet.expressions;
 
 public class AmbiguousFunctionException extends RuntimeException {
-	public AmbiguousFunctionException() { super(); }
-	public AmbiguousFunctionException(String message) { super(message); }
-	public AmbiguousFunctionException(Throwable cause) { super(cause); }
-	public AmbiguousFunctionException(String message, Throwable cause) { super(message, cause); }
+	public final FunctionDefinition definition;
+	
+	public AmbiguousFunctionException(FunctionDefinition definition) { 
+		super(); 
+		this.definition = definition; 
+	}
+	
+	@Override
+	public String getMessage() {
+		return String.format("A function with definition %s is already defined.");
+	}
 }

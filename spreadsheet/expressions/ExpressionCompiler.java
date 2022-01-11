@@ -4,13 +4,11 @@ import spreadsheet.Geometry.GridVector2;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
 
 import expressions.ConstantExpressionTreeNode;
 import expressions.ExpressionTreeNode;
 import expressions.FunctionExpressionTreeNode;
-import expressions.InvalidExpressionTreeException;
-import spreadsheet.Cell;
+import expressions.ExpressionTreeTypeException;
 import spreadsheet.CellIdentifiers;
 import spreadsheet.Range;
 import spreadsheet.Spreadsheet;
@@ -35,17 +33,16 @@ public class ExpressionCompiler {
 	
 	/** Compiles the expression into an expression tree and returns the root. 
 	 * @throws UnknownFunctionException 
-	 * @throws InvalidExpressionTreeException 
+	 * @throws ExpressionTreeTypeException 
 	 * @throws UnexpectedTokenException */
-	public ExpressionTreeNode compile(String expression) throws TokenizeException, UnexpectedTokenException, InvalidExpressionTreeException, UnknownFunctionException{
+	public ExpressionTreeNode compile(String expression) throws TokenizeException, UnexpectedTokenException, ExpressionTreeTypeException, UnknownFunctionException{
 		tokenizer.tokenize(expression);
 		
 		ExpressionTreeNode compiled = readExpression();
 		
 		if (!tokenizer.exhausted())
-			throw new UnexpectedTokenException(tokenizer.nextToken(), null);
-		
-		// throw if the tokenizer isn't exhausted
+			throw new UnexpectedTokenException(tokenizer.nextToken());
+
 		return compiled;
 	}
 
@@ -54,12 +51,10 @@ public class ExpressionCompiler {
 	 * @return The root of the tree, or null if the tokenizer is exhausted or the upcoming tokens cannot possibly represent an expression.
 	 * @throws TokenizeException An unexpected character was found by the tokenizer.
 	 * @throws UnexpectedTokenException When tokens that might represent an expression were read, but an unexpected token was then found.
-	 * @throws InvalidExpressionTreeException 
+	 * @throws ExpressionTreeTypeException 
 	 * @throws UnknownFunctionException 
 	 */
-	private ExpressionTreeNode readExpression() throws UnexpectedTokenException, InvalidExpressionTreeException, UnknownFunctionException {
-		System.out.println("expr\t" + tokenizer.peek());
-		
+	private ExpressionTreeNode readExpression() throws UnexpectedTokenException, ExpressionTreeTypeException, UnknownFunctionException {
 		ExpressionTreeNode fact1 = readTerm();
 		
 		Token op_token = tokenizer.nextToken();
@@ -89,7 +84,8 @@ public class ExpressionCompiler {
 	
 	/** Reads a token and performs type checks.
 	 * @param eofIsExpected If false, throws if the token read is null.
-	 * @param tokenTypes The allowed token types. If null, any token is accepted and only a null check is performed, considering eofIsExpected.
+	 * @param tokenTypes The allowed token types. If empty, any token is accepted and only a null check is performed, considering eofIsExpected.
+	 * @throws UnexpectedTokenException The token is not allowed.
 	 */
 	private Token expectTokenOf(boolean eofIsExpected, TokenType... tokenTypes) throws UnexpectedTokenException {
 		Token tok = tokenizer.nextToken();
@@ -100,14 +96,20 @@ public class ExpressionCompiler {
 				throw new UnexpectedTokenException(null, tokenTypes);
 		}
 		
-		if (tokenTypes == null || tokenTypes.length == 0 || Arrays.asList(tokenTypes).contains(tok.type))
+		if (tokenTypes.length == 0 || Arrays.asList(tokenTypes).contains(tok.type))
 			return tok;
 		else {
 			throw new UnexpectedTokenException(tok, tokenTypes);
 		}
 	}
 	
-	private List<ExpressionTreeNode> readFunctionParameters() throws UnexpectedTokenException, InvalidExpressionTreeException, UnknownFunctionException {
+	/** Reads the parameters of a function. 
+	 * @return The list of parameters.
+	 * @throws UnexpectedTokenException
+	 * @throws ExpressionTreeTypeException
+	 * @throws UnknownFunctionException
+	 */
+	private List<ExpressionTreeNode> readFunctionParameters() throws UnexpectedTokenException, ExpressionTreeTypeException, UnknownFunctionException {
 		ArrayList<ExpressionTreeNode> parameters = new ArrayList<ExpressionTreeNode>();
 		
 		Token tok = tokenizer.nextToken();
@@ -130,10 +132,13 @@ public class ExpressionCompiler {
 	}
 	
 	
-	/** Reads an operand (a parenthesized expression, a number constant, a function call, a range, a cell. */
-	private ExpressionTreeNode readOperand() throws UnexpectedTokenException, InvalidExpressionTreeException, UnknownFunctionException {
-		System.out.println("operand\t" + tokenizer.peek());
-		
+	/** Reads an operand (a parenthesized expression, a number constant, a function call, a range, a cell.
+	 * @return An operand.
+	 * @throws UnexpectedTokenException
+	 * @throws ExpressionTreeTypeException
+	 * @throws UnknownFunctionException
+	 */
+	private ExpressionTreeNode readOperand() throws UnexpectedTokenException, UnknownFunctionException, ExpressionTreeTypeException  {
 		Token operand_tok = expectTokenOf(false, ExpressionTokenType.NUMBER.type, ExpressionTokenType.OPENING_PARENS.type, ExpressionTokenType.IDENTIFIER.type);
 		
 		// OPERAND := NUMBER | FUNCTION | RANGE | CELL | \(EXPRESSION\)
@@ -183,10 +188,13 @@ public class ExpressionCompiler {
 			throw new Error("lmao");
 	}
 	
-	/** Reads a term (an optional expression operator before an operand, optionally followed by a * or / operator and another term. */
-	private ExpressionTreeNode readTerm() throws UnexpectedTokenException, InvalidExpressionTreeException, UnknownFunctionException {
-		System.out.println("term\t" + tokenizer.peek());
-		
+	/** Reads a term (an optional expression operator before an operand, optionally followed by a * or / operator and another term.
+	 * @return A term.
+	 * @throws UnexpectedTokenException
+	 * @throws ExpressionTreeTypeException
+	 * @throws UnknownFunctionException
+	 */
+	private ExpressionTreeNode readTerm() throws UnexpectedTokenException, ExpressionTreeTypeException, UnknownFunctionException {
 		ExpressionTreeNode operand;
 		
 		// TERM := EXPRESSIONOP? OPERAND (TERMOP TERM)?

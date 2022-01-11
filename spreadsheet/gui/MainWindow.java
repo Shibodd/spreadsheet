@@ -2,12 +2,21 @@ package spreadsheet.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
-import javax.swing.*;
-import javax.swing.table.TableRowSorter;
+import java.awt.event.KeyListener;
+
+import javax.swing.BoxLayout;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import javax.swing.event.RowSorterEvent;
+import javax.swing.event.RowSorterListener;
 
 import spreadsheet.CellEvaluationError;
 import spreadsheet.Spreadsheet;
@@ -26,7 +35,6 @@ public class MainWindow extends JFrame {
 
 		this.spreadsheet = spreadsheet;
 		
-		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		setJMenuBar(new AppMenuBar(this, spreadsheet));
 
 		JPanel statusBar = new JPanel();
@@ -40,12 +48,36 @@ public class MainWindow extends JFrame {
 		selectedCell = new GridVector2();
 		
 		table = new SpreadsheetTable(spreadsheet);
-		RowSorter sorter = table.getRowSorter();
-		
-		
 		expressionTextField = new JTextField();
-		
+
 		table.registerKeyboardAction((e) -> expressionTextField.requestFocus(), KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), JComponent.WHEN_FOCUSED);
+		
+		table.addKeyListener(new KeyListener() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				char c = e.getKeyChar();
+				boolean backspace = e.getKeyCode() == KeyEvent.VK_BACK_SPACE;
+				
+				if (backspace || c == '=' || Character.isAlphabetic(c) || Character.isDigit(c)) {
+					if (backspace) {
+						String expr = expressionTextField.getText();
+						
+						if (expr.length() > 0)
+							expressionTextField.setText(expr.substring(0, expr.length() - 1));	
+					} else
+						expressionTextField.setText(expressionTextField.getText() + c);
+					
+					expressionTextField.requestFocus();
+				}
+			}
+			
+			@Override
+			public void keyTyped(KeyEvent e) {}
+			@Override
+			public void keyReleased(KeyEvent e) {}
+		});
+		
+
 		table.addSelectedCellChangedListener(new ISelectedCellChangedListener() {
 			@Override
 			public void onSelectedCellChanged(GridVector2 position) {
@@ -56,7 +88,7 @@ public class MainWindow extends JFrame {
 					return;
 				}
 				
-				GridVector2 actualPos = new GridVector2(sorter.convertRowIndexToModel(position.row), position.column);
+				GridVector2 actualPos = new GridVector2(table.getRowSorter().convertRowIndexToModel(position.row), position.column);
 				expressionTextField.setText(spreadsheet.getExpressionAt(actualPos));
 				selectedCell = actualPos;
 				updateError();
@@ -73,8 +105,21 @@ public class MainWindow extends JFrame {
 				}
 			}
 		});
-
-		add(new JScrollPane(table), BorderLayout.CENTER);
+		
+		JScrollPane tableScroll = new JScrollPane(table);
+		SpreadsheetRowHeader tableRowHeader = new SpreadsheetRowHeader(spreadsheet, table);
+		tableRowHeader.setFixedCellWidth(20);
+		tableRowHeader.setFixedCellHeight(table.getRowHeight());
+		tableScroll.setRowHeaderView(tableRowHeader);
+		
+		table.getRowSorter().addRowSorterListener(new RowSorterListener() {
+			@Override
+			public void sorterChanged(RowSorterEvent e) { tableRowHeader.repaint(); }
+		});
+		
+		
+		
+		add(tableScroll, BorderLayout.CENTER);
 		add(expressionTextField, BorderLayout.NORTH);
 		add(statusBar, BorderLayout.SOUTH);
 		

@@ -1,5 +1,9 @@
 package expressions;
 
 public interface IExpressionTreeAccumulator {
-	public Object accumulate(Object accumulator, Object value) throws InvalidExpressionTreeException;
+	/**@param accumulator The partial result of the accumulation.
+	 * @param value The new value.
+	 * @return The new partial result.
+	 */
+	public Object accumulate(Object accumulator, Object value);
 }

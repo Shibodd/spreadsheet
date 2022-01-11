@@ -1,16 +1,14 @@
 package spreadsheet;
 
-import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Stack;
 
 import expressions.ConstantExpressionTreeNode;
 import expressions.ExpressionTreeNode;
-import expressions.InvalidExpressionTreeException;
+import expressions.ExpressionTreeTypeException;
 import graph.GraphCycleException;
 import graph.GraphNode;
 import spreadsheet.Geometry.GridVector2;
-import spreadsheet.expressions.CellExpressionTreeNode;
 
 
 /** Data structure for cells, which caches the result value of the expressionTree and can be notified of dependency changes to reevaluate itself.*/
@@ -63,7 +61,7 @@ public class Cell implements IDependencyChangedListener {
 					nodes.pop().data.onDependencyChanged(this);
 			}
 		} catch (GraphCycleException ex) {
-			this.value = new CellEvaluationError(new InvalidExpressionTreeException("The expression presents a circular reference."));
+			this.value = new CellEvaluationError(new Exception("The expression presents a circular reference.", ex));
 		}
 	}
 	
@@ -77,12 +75,11 @@ public class Cell implements IDependencyChangedListener {
 		
 		try {
 			this.value = expressionTree.evaluate();			
-		} catch (InvalidExpressionTreeException ex) {
-			this.value = new CellEvaluationError(ex);
+		} catch (ExpressionTreeTypeException ex) {
+			this.value = new CellEvaluationError(new Exception("There are type errors in the expression.", ex));
 		}
 		
 		if (!Objects.equals(oldValue, value) && cellValueChangedListener != null)
 			cellValueChangedListener.onCellValueChanged(position);
-			
 	}
 }

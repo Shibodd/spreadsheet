@@ -1,7 +1,8 @@
 package expressions;
 
-import java.util.Objects;
 import java.util.function.Function;
+
+
 /** An expression tree node which executes a function, with the children's result value as parameters. */
 public class FunctionExpressionTreeNode extends ExpressionTreeNode {
 	Function<Object[], Object> function;
@@ -9,7 +10,7 @@ public class FunctionExpressionTreeNode extends ExpressionTreeNode {
 	
 	
 	/**
-	 * @param parameterClasses An array containing the classes of the parameters. The amount of parameters is determined by the length of this array.
+	 * @param parameterClasses An array containing the classes of the parameters. The amount of parameters and the order they should be passed is determined by this array.
 	 * @param function The function to execute.
 	 */
 	public FunctionExpressionTreeNode(Class<?>[] parameterClasses, Function<Object[], Object> function) {
@@ -19,16 +20,14 @@ public class FunctionExpressionTreeNode extends ExpressionTreeNode {
 		this.function = function;
 	}
 
-	/** Adds a children to this node.
-	 * Parameters are positional, so children should be passed in order described by the parameterClasses parameter in the constructor.
-	 * @throws InvalidExpressionTreeException When too many parameters are provided or node has a different result class from what is expected as the current parameter.
+	/** Adds a children to this node. Parameters are positional, so children should be passed in order described by the parameterClasses parameter in the constructor.
+	 * @throws IllegalStateException When the amount of children is more than the expected parameter count.
 	 */
 	@Override
-	public void addChild(ExpressionTreeNode node) 
-			throws InvalidExpressionTreeException {
+	public void addChild(ExpressionTreeNode node) {
 		
 		if (children.size() >= parameterClasses.length)
-			throw new InvalidExpressionTreeException(
+			throw new IllegalStateException(
 					String.format("Too many parameters provided - this function only expects %d.", parameterClasses.length)
 			);
 		
@@ -36,15 +35,15 @@ public class FunctionExpressionTreeNode extends ExpressionTreeNode {
 	}
 
 	
-	/** Evaluates the function, by passing the children's result values as parameters to the function passed in the constructor.
-	 * @throws InvalidExpressionTreeException When the amount of children is less than the expected parameter count described by the length of the parameterClasses parameter in the constructor.
+	/** Evaluates the function, by passing the children's result values as parameters to the function.
+	 * @throws IllegalStateException When the amount of children is less than the expected parameter count.
 	 */
 	@Override
 	public Object evaluate() 
-			throws InvalidExpressionTreeException {
+			throws ExpressionTreeTypeException {
 		
 		if (children.size() != parameterClasses.length)
-			throw new InvalidExpressionTreeException(
+			throw new IllegalStateException(
 					String.format("This function node expects %d children, but %d were provided.", parameterClasses.length, children.size())
 			);
 

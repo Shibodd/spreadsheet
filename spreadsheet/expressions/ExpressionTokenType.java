@@ -44,6 +44,9 @@ public enum ExpressionTokenType {
 		type = new TokenType(pattern, description);
 	}
 	
+	/**
+	 * @return An array containing all the types of the values of this enum.
+	 */
 	public static TokenType[] toLanguage() {
 		return Arrays.stream(ExpressionTokenType.values())
 				.map(x -> x.type)

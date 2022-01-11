@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.swing.AbstractAction;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
@@ -34,7 +33,7 @@ public class SaveAction extends AbstractAction {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		try {
-			if (isSaveAs || spreadsheet.getFilePath() == null) {
+			if (isSaveAs || spreadsheet.filePath == null) {
 				JFileChooser chooser = new JFileChooser() {
 					@Override
 					public void approveSelection() {
@@ -48,12 +47,12 @@ public class SaveAction extends AbstractAction {
 				};
 				
 				if (chooser.showSaveDialog(dialogParent) == JFileChooser.APPROVE_OPTION)
-					spreadsheet.saveToFile(chooser.getSelectedFile().getAbsolutePath());		
-			} else
-				spreadsheet.saveToFile();
+					spreadsheet.filePath = (chooser.getSelectedFile().getAbsolutePath());		
+			}
+			
+			spreadsheet.saveToFile(spreadsheet.filePath);
 		} catch (IOException ex) {
 			JOptionPane.showMessageDialog(dialogParent, ex.getMessage(), "Failed to save to file.", JOptionPane.ERROR_MESSAGE);
-		}
-		
+		}		
 	}
 }

@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 
 
 
-/** Allows separating a string into tokens determined by regular expressions. */
+/** Allows reading tokens from a string. The tokens are determined by regular expressions.*/
 public class Tokenizer {
 	TokenType[] language;
 	Pattern[] languagePatterns;
@@ -19,8 +19,9 @@ public class Tokenizer {
 	String expression;
 	int char_i;
 	
-	/** @param language The token types. 
-	 * When reading tokens, the first token type whose regex matches determines the token read. */
+	 
+	/** @param language The token types, in order of priority, highest at index 0. When reading tokens, the first regex that matches determines the token read.
+	*/ 
 	public Tokenizer(TokenType[] language) {
 		this.language = language;
 		this.languagePatterns = 
@@ -29,7 +30,9 @@ public class Tokenizer {
 					.toArray(count -> new Pattern[count]);
 	}	
 	
-	/** Tokenizes an expression. */
+	/** Resets this Tokenizer and tokenizes a new expression.
+	 * @param expression The expression to tokenize.
+	 */
 	public void tokenize(String expression) throws TokenizeException {
 		this.expression = expression;
 		this.tokens = new ArrayList<Token>();
@@ -40,47 +43,36 @@ public class Tokenizer {
 		Matcher[] matchers = Arrays.stream(languagePatterns)
 				.map(x -> x.matcher(expression))
 				.toArray(count -> new Matcher[count]);
+		
 		Token tok;
 		while ((tok = readToken(matchers)) != null)
 			tokens.add(tok);
 	}
 	
+	/** @return the next token. */
 	public Token nextToken() {
 		Token tok = token_i >= tokens.size()? null : tokens.get(token_i++);
 		
 		return tok;
 	}
 	
-	public int tellToken() {
-		return token_i;
-	}
-	
+	/** Pushes back the last token read. */
 	public void pushBack() {
 		if (token_i > 0)
 			--token_i;
 		else
-			throw new IllegalStateException("No more tokens can be pushed back.");
+			throw new IllegalStateException("There is no token to push back.");
 	}
 	
-	public Token peek() {
-		if (exhausted())
-			return null;
-		else
-			return tokens.get(token_i);
-	}
-	
-	public void seekToken(int token_i) {
-		if (token_i < 0 || token_i >= tokens.size())
-			throw new IllegalArgumentException();
-		
-		this.token_i = token_i;
-	}
-	
+	/** @return Whether there is no token available for reading. */
 	public boolean exhausted() {
 		return token_i >= tokens.size();
 	}
 
-	/** Reads a new token, advancing the cursor. */
+	/** Reads a new token, advancing the cursor. 
+	 * @param matchers The matchers to use for matching regexes.
+	 * @return The token read.
+	 */
 	private Token readToken(Matcher[] matchers) throws TokenizeException {
 		// Consume any whitespace.
 		while (char_i < expression.length() && Character.isWhitespace(expression.charAt(char_i)))

@@ -8,6 +8,7 @@ import spreadsheet.Spreadsheet;
 import spreadsheet.Geometry.GridVector2;
 
 
+/** A TableModel which retrieves its data from a spreadsheet. */
 public class SpreadsheetTableModel extends AbstractTableModel implements ICellValueChangedListener {
 	final Spreadsheet spreadsheet;
 	

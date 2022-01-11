@@ -12,10 +12,10 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableRowSorter;
 
 import spreadsheet.CellEvaluationError;
-import spreadsheet.CellIdentifiers;
 import spreadsheet.Spreadsheet;
 import spreadsheet.Geometry.GridVector2;
 
+/** The table which shows the actual data and allows sorting. */
 public class SpreadsheetTable extends JTable {
 	final Spreadsheet spreadsheet;
 	final SpreadsheetTableModel model;
@@ -44,8 +44,7 @@ public class SpreadsheetTable extends JTable {
 				// This method rotates between all three states and keeps only the latest sort order.
 
 				SortOrder order = 
-						getSortKeys()
-							.stream()
+						getSortKeys().stream()
 							.filter(x -> x.getColumn() == column)
 							.map(x -> x.getSortOrder())
 							.findFirst()
@@ -62,8 +61,7 @@ public class SpreadsheetTable extends JTable {
 					order = SortOrder.UNSORTED;
 					break;
 				}
-				
-				
+
 				List<SortKey> newSortKeys = new ArrayList<SortKey>();
 				newSortKeys.add(new SortKey(column, order));
 				setSortKeys(newSortKeys);

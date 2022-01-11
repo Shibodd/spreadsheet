@@ -19,16 +19,27 @@ public abstract class ExpressionTreeNode {
 		children = new LinkedList<ExpressionTreeNode>();
 	}
 	
-	public void addChild(ExpressionTreeNode node) throws InvalidExpressionTreeException { 
+	
+	/** Adds node as a child of this node.
+	 * @param node The node to add.
+	 */
+	public void addChild(ExpressionTreeNode node) { 
 		children.add(node);
 	}
 	
+	
+	/** Removes a child node.
+	 * @param node The node to remove.
+	 */
 	public void removeChild(ExpressionTreeNode node) {
 		children.remove(node);
 	}
 	
 	
-	/** Applies action in post-order to each descendant for which predicate tests true. */
+	/** Applies action in post-order to each descendant for which predicate tests true.
+	 * @param predicate The predicate to test whether to apply the action.
+	 * @param action The action to perform.
+	 */
 	private void dfsPostApplyWhere(Predicate<ExpressionTreeNode> predicate, Consumer<ExpressionTreeNode> action) {
 		for (ExpressionTreeNode child : children)
 			child.dfsPostApplyWhere(predicate, action);
@@ -37,7 +48,10 @@ public abstract class ExpressionTreeNode {
 			action.accept(this);
 	}
 	
-	/** Gets all the descendants of the tree which are of type theClass. */
+	/** Gets all the descendants of the tree of a given type.
+	 * @param theClass The class of the descendants that have to be returned.
+	 * @return A list containing the descendants of type theClass. 
+	 */
 	public List<ExpressionTreeNode> getNodesOfClass(Class<?> theClass) {
 		ArrayList<ExpressionTreeNode> ans = new ArrayList<ExpressionTreeNode>();
 		
@@ -47,20 +61,25 @@ public abstract class ExpressionTreeNode {
 	}
 
 	
-	/** Evaluates the expression tree and returns the result. */
-	public abstract Object evaluate() throws InvalidExpressionTreeException;
+	/** Evaluates the expression tree and returns the result.
+	 * @return The result.
+	 * @throws ExpressionTreeTypeException If the type of a child or the type of the result doesn't match the expected type.
+	 */
+	public abstract Object evaluate() throws ExpressionTreeTypeException;
 	
-	
-	public Object evaluateChildAndTypeCheck(int i, Class<?> expectedClass) throws InvalidExpressionTreeException {
+	/** Returns the result of a child and performs type checking of its result.
+	 * @param i The index of the child.
+	 * @param expectedClass The class the child's result should be an instance of.
+	 * @return The result of the child.
+	 * @throws ExpressionTreeTypeException If the type of the result does not match expectedClass.
+	 */
+	public Object evaluateChildAndTypeCheck(int i, Class<?> expectedClass) throws ExpressionTreeTypeException {
 		Object value = children.get(i).evaluate();
 		
 		Class<?> valueClass = value == null? null : value.getClass();
 		
 		if (valueClass == null || !expectedClass.equals(valueClass))
-			throw new InvalidExpressionTreeException(
-					String.format("The class \"%s\" of the children %d differs from the expected class \"%s\".", 
-							valueClass == null? "null" : valueClass.getName(), i, expectedClass.getName())
-			);
+			throw new ExpressionTreeTypeException(children.get(i), valueClass, expectedClass);
 		
 		return value;
 	}

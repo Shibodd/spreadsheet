@@ -13,12 +13,15 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.Border;
 
 import myUtils.Utils;
+import spreadsheet.Geometry.GridVector2;
 
+/** The dialog which prompts the user to open a file or create a new spreadsheet when starting the application.*/
 public class AppStartupDialog extends JDialog {
 	private JTextField widthField;
 	private JTextField heightField;
@@ -34,35 +37,30 @@ public class AppStartupDialog extends JDialog {
 		OpenFromFile
 	}
 	
+	/** @return The choice the user made. */
 	public Choice getActionChoice() {
 		return choice;
 	}
 	
-	public int getSpreadsheetWidth() {
+	/** @return The size of the spreadsheet the user chose.
+	 * @throws IllegalStateException if the user's choice is not CreateNew. */
+	public GridVector2 getSpreadsheetSize() {
 		if (choice != Choice.CreateNew)
-			throw new IllegalStateException();
+			throw new IllegalStateException("The user did not choose to create a new spreadsheet.");
 		
-		return width;
+		return new GridVector2(width, height);
 	}
 	
-	public int getSpreadsheetHeight() {
-		if (choice != Choice.CreateNew)
-			throw new IllegalStateException();
-		
-		return height;
-	}
-	
+	/** @return The filepath the user chose.
+	 * @throws IllegalStateException if the user's choice is not OpenFromFile.
+	 */
 	public String getSpreadsheetFilePath() {
 		if (choice != Choice.OpenFromFile)
-			throw new IllegalStateException();
+			throw new IllegalStateException("The user did not choose to open from file.");
 		
 		return filePath;
 	}
 
-	
-	
-	
-	
 	public AppStartupDialog() {
 		super();
 		
@@ -119,13 +117,26 @@ public class AppStartupDialog extends JDialog {
 		openPanel.add(new JButton(new AbstractAction("Open from file...") {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser fileChooser = new JFileChooser();
+				JFileChooser fileChooser = new JFileChooser() {
+					public void approveSelection() {
+						if (!getSelectedFile().exists()) {
+							JOptionPane.showMessageDialog(this, "The file does not exist.", "Error", JOptionPane.ERROR_MESSAGE);
+							return;
+						}
+						else
+							super.approveSelection();
+					};
+				};
+
 				if (fileChooser.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) {
-					filePath = fileChooser.getSelectedFile().getAbsolutePath();
 					choice = Choice.OpenFromFile;
-					dispose();
-				} else
+					filePath = fileChooser.getSelectedFile().getAbsolutePath();
+				} else {
 					choice = Choice.None;
+					filePath = null;
+				}
+				
+				dispose();
 			}
 		}));
 		

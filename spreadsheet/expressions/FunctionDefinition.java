@@ -14,7 +14,17 @@ public class FunctionDefinition {
 		this.supplier = supplier;
 	}
 	
+
+	/**
+	 * @param name The name to match against.
+	 * @param parameterCount The parameter count to match against.
+	 * @return Whether this function definition matches the parameters.
+	 */
 	public boolean matchesDefinition(String name, int parameterCount) {
 		return this.name.equals(name) && this.parameterCount == parameterCount;
+	}
+	
+	public String toString() {
+		return String.format("%s(%d)", name, parameterCount);
 	}
 }

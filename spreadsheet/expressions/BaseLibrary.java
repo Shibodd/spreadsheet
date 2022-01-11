@@ -4,7 +4,10 @@ import expressions.ExpressionTreeNode;
 import expressions.FirstChildAccumulatorExpressionTreeNode;
 import expressions.FunctionExpressionTreeNode;
 
+/** Contains methods that are used to produce expression tree nodes or function definitions. */
 public class BaseLibrary {
+	private BaseLibrary() {}
+	
 	public static ExpressionTreeNode op_sum() {
 		return new FirstChildAccumulatorExpressionTreeNode(Double.class, (acc, x) -> (double)acc + (double)x);
 	}
@@ -32,18 +35,18 @@ public class BaseLibrary {
 		library.importMethod(baseClass.getMethod("concat", String.class, String.class));
 	}
 	
-	
 	private static void importMath(FunctionLibrary library) throws AmbiguousFunctionException, NoSuchMethodException, SecurityException {
 		Class<?> mathClass = Math.class;
 		
-		String[] methods = new String[] { "abs", "log", "sin", "cos", "acos", "asin", "atan" };
+		String[] methods = new String[] { "abs", "log", "sin", "cos", "acos", "asin", "atan", "sqrt" };
 		for (String name : methods)
 			library.importMethod(mathClass.getMethod(name, double.class));
 		
 		library.importMethod(mathClass.getMethod("random"));
 	}
 	
-	public static FunctionLibrary makeBaseLibrary() throws AmbiguousFunctionException {
+	/** @return A function library containing the base functions for the application. */
+	public static FunctionLibrary makeBaseLibrary() {
 		FunctionLibrary library = new FunctionLibrary();
 		
 		try {
@@ -56,4 +59,3 @@ public class BaseLibrary {
 		return library;
 	}
 }
-

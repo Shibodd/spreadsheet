@@ -16,7 +16,6 @@ public class UnexpectedTokenException extends Exception {
 		this.expectedTokens = expectedTokens;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public String getMessage() {
 		String expected = null;

@@ -2,7 +2,6 @@ package spreadsheet;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.IntStream;
 
 import spreadsheet.Geometry.GridVector2;
 
@@ -15,25 +14,32 @@ public class CellIdentifiers {
 	
 	static final Pattern POINT_RE = Pattern.compile("([A-Z]+)([0-9]+)");
 	
-	/** Parses the position of a cell from a string. 
-	 * @throws IllegalArgumentException When the string is not in a valid format, or the column part is too large.
+	private CellIdentifiers() {}
+	
+	/** Parses the position from an identifier.
+	 * @param str The string from which to parse the position.
+	 * @throws NumberFormatException When the string is not in a valid format, or the column part is too large.
 	 */
-	public static GridVector2 parse(String str) throws IllegalArgumentException {
+	public static GridVector2 parse(String str) {
 		Matcher matcher = POINT_RE.matcher(str);
 		
 		if (!matcher.matches())
-			throw new IllegalArgumentException("The Cell identifier is in the wrong format.");
+			throw new NumberFormatException("The Cell identifier is in the wrong format.");
 		
 		return new GridVector2(
-				Integer.parseInt(matcher.group(2)), 
+				Integer.parseInt(matcher.group(2)) - 1, 
 				parseCol(matcher.group(1))
 		);
 	}
 	
-	/** Parses the column of a cell from colStr. */
-	public static int parseCol(String colStr) throws IllegalArgumentException {
+	/** Parses a column identifier from a string. Does not perform any check.
+	 * @param colStr The string from which to parse the column.
+	 * @return The column.
+	 * @throws NumberFormatException If the column identifier represents a column which is too large.
+	 * */
+	private static int parseCol(String colStr) {
 		if (colStr.length() > MAX_COL_LEN || (colStr.length() == MAX_COL_LEN && colStr.compareTo(MAX_COL) > 0))
-			throw new IllegalArgumentException("The column identifier is too large.");
+			throw new NumberFormatException("The column identifier is too large.");
 		
 		int col = 0;
 		int len = colStr.length();
@@ -48,10 +54,14 @@ public class CellIdentifiers {
 	}
 	
 	
-	/** Converts the column of a cell to its string representation. */
+	/** Converts a column to its string representation. 
+	 * @param col The column to convert.
+	 * @returns The string representation of the column.
+	 * @throws IllegalArgumentException If col is negative.
+	 * */
 	public static String colToString(int col) throws IllegalArgumentException {
 		if (col < 0)
-			throw new IllegalArgumentException("Argument col must be greater or equal to zero.");
+			throw new IllegalArgumentException("col must be non negative.");
 		
 		StringBuilder builder = new StringBuilder();
 
@@ -63,13 +73,17 @@ public class CellIdentifiers {
 	        builder.append((char)('A' + modulo));
 	        col = (col - modulo) / 26;
 	    } 
-		
-		
+
 		return builder.reverse().toString();
 	}
 	
-	/** Converts the position of a cell to a string. */
+
+	/** Converts a position to its string representation.
+	 * @param pt The position to convert.
+	 * @return The string representation of the position.
+	 * @throws IllegalArgumentException If the column is negative.
+	 */
 	public static String toString(GridVector2 pt) {
-		return colToString(pt.column) + pt.row;
+		return colToString(pt.column) + (pt.row + 1);
 	}
 }
