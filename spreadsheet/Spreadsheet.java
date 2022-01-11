@@ -38,8 +38,7 @@ public class Spreadsheet implements ICellValueChangedListener {
 	List<ICellValueChangedListener> cellValueChangedListeners;
 
 	/** Initializes an empty spreadsheet with a certain size.
-	 * @param width The width.
-	 * @param height The height. 
+	 * @param size The size.
 	 */
 	public Spreadsheet(GridVector2 size) {
 		rect = new GridRect(0, 0, size.row, size.column);
